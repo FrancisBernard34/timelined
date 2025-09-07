@@ -68,7 +68,7 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
     if (yearIndex === -1) return null
 
     const monthPosition = yearIndex * 12 + period.month
-    return monthPosition * 120 + 60 // 120px per month + 60px offset
+    return monthPosition * 128 + 64 // 128px per month (w-32) + 64px offset (half width)
   }
 
   return (
@@ -85,26 +85,26 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
         onTouchEnd={handleTouchEnd}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <div className="relative h-48 min-w-max">
+        <div className="relative h-56 min-w-max pt-8">
           {/* Timeline line */}
-          <div className="absolute top-24 left-0 right-0 h-0.5 bg-border"></div>
+          <div className="absolute top-32 left-0 right-0 h-0.5 bg-border"></div>
 
           {/* Years and months */}
           <div className="flex">
             {years.map((year, yearIndex) => (
               <div key={year} className="flex">
                 {months.map((month, monthIndex) => (
-                  <div key={`${year}-${month}`} className="relative w-30 flex flex-col items-center">
+                  <div key={`${year}-${month}`} className="relative w-32 flex flex-col items-center">
                     {/* Year label (only on January) */}
                     {monthIndex === 0 && (
-                      <div className="absolute -top-8 text-lg font-bold text-foreground">{year}</div>
+                      <div className="absolute top-0 text-lg font-bold text-foreground whitespace-nowrap">{year}</div>
                     )}
 
                     {/* Month label */}
-                    <div className="absolute top-4 text-sm text-muted-foreground font-medium">{month}</div>
+                    <div className="absolute top-12 text-sm text-muted-foreground font-medium">{month}</div>
 
                     {/* Timeline marker */}
-                    <div className="absolute top-24 w-2 h-2 bg-border rounded-full transform -translate-x-1"></div>
+                    <div className="absolute top-32 w-2 h-2 bg-border rounded-full transform -translate-x-1"></div>
                   </div>
                 ))}
               </div>
@@ -119,7 +119,7 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
             return (
               <div
                 key={period.id}
-                className="absolute top-12 transform -translate-x-1/2 cursor-pointer"
+                className="absolute top-20 transform -translate-x-1/2 cursor-pointer"
                 style={{ left: `${position}px` }}
                 onClick={() => onPeriodClick(period)}
               >
