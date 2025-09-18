@@ -57,11 +57,24 @@ export default function TimelinedApp() {
     if (!newPeriodName.trim()) return
 
     const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+
+    // Check if a period already exists for the current month and year
+    const existingPeriod = periods.find(
+      (period) => period.month === currentMonth && period.year === currentYear
+    )
+
+    if (existingPeriod) {
+      alert(`A period "${existingPeriod.name}" already exists for this month. Only one period per month is allowed.`)
+      return
+    }
+
     const newPeriod: TimelinePeriod = {
       id: crypto.randomUUID(),
       name: newPeriodName.trim(),
-      month: now.getMonth(),
-      year: now.getFullYear(),
+      month: currentMonth,
+      year: currentYear,
       createdAt: now,
       schedule: [],
     }
@@ -80,6 +93,12 @@ export default function TimelinedApp() {
     setPeriods((prev) => prev.map((p) => (p.id === periodId ? { ...p, schedule } : p)))
   }
 
+  const handleDeletePeriod = (periodId: string) => {
+    setPeriods((prev) => prev.filter((p) => p.id !== periodId))
+    setIsModalOpen(false)
+    setSelectedPeriod(null)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -95,7 +114,7 @@ export default function TimelinedApp() {
             {!isCreatingPeriod ? (
               <Button
                 onClick={() => setIsCreatingPeriod(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Period
@@ -120,7 +139,7 @@ export default function TimelinedApp() {
                 <Button
                   onClick={handleCreatePeriod}
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                 >
                   Create
                 </Button>
@@ -129,6 +148,7 @@ export default function TimelinedApp() {
                     setIsCreatingPeriod(false)
                     setNewPeriodName("")
                   }}
+                  className="cursor-pointer"
                   size="sm"
                   variant="outline"
                 >
@@ -138,7 +158,7 @@ export default function TimelinedApp() {
             )}
 
             {/* Theme Toggle */}
-            <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            <Button className="cursor-pointer" variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
@@ -162,6 +182,7 @@ export default function TimelinedApp() {
           }}
           period={selectedPeriod}
           onUpdateSchedule={handleUpdateSchedule}
+          onDeletePeriod={handleDeletePeriod}
         />
       )}
     </div>
