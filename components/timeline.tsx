@@ -97,11 +97,11 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
                   <div key={`${year}-${month}`} className="relative w-32 flex flex-col items-center">
                     {/* Year label (only on January) */}
                     {monthIndex === 0 && (
-                      <div className="absolute top-0 text-lg font-bold text-foreground whitespace-nowrap">{year}</div>
+                      <div className="absolute top-0 text-lg font-bold text-foreground whitespace-nowrap select-none">{year}</div>
                     )}
 
                     {/* Month label */}
-                    <div className="absolute top-12 text-sm text-muted-foreground font-medium">{month}</div>
+                    <div className="absolute top-12 text-sm text-muted-foreground font-medium select-none">{month}</div>
 
                     {/* Timeline marker */}
                     <div className="absolute top-32 w-2 h-2 bg-border rounded-full transform -translate-x-1"></div>
@@ -128,7 +128,7 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
 
                 {/* Period bubble */}
                 <div className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 transition-colors border-2 border-primary-foreground/20">
-                  <div className="text-sm font-semibold text-center whitespace-nowrap">{period.name}</div>
+                  <div className="text-sm font-semibold text-center whitespace-nowrap select-none">{period.name}</div>
                 </div>
               </div>
             )

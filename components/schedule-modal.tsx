@@ -16,7 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Plus, Trash2, Clock } from "lucide-react";
 import type { TimelinePeriod, ScheduleTask } from "@/app/page";
 
@@ -184,11 +189,11 @@ export function ScheduleModal({
             </div>
           ) : (
             <TooltipProvider>
-              <div className="space-y-1">
+              <div className="space-y-1 bg-card p-2 border border-border rounded-lg">
                 {currentDayTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center justify-between p-2 gap-2 bg-card"
+                    className="flex items-center justify-between gap-2 bg-transparent"
                   >
                     <div className="w-[15%] h-[2rem]  border border-orange-500 rounded-lg p-2 select-none">
                       <p className="text-sm text-muted-foreground leading-none">
@@ -213,9 +218,9 @@ export function ScheduleModal({
                       </Tooltip>
                     </div>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="w-[10%] h-[2rem] cursor-pointer"
+                      className="w-[10%] h-[2rem] cursor-pointer bg-red-500"
                       onClick={() => handleDeleteTask(task.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -237,32 +242,34 @@ export function ScheduleModal({
               </Button>
             ) : (
               <div className="space-y-4">
-                <div className="flex flex-row gap-4">
-                  <Input
-                    type="time"
-                    className="w-[7.3rem] border-orange-500"
-                    placeholder="Start time"
-                    value={newTask.startTime}
-                    onChange={(e) =>
-                      setNewTask((prev) => ({
-                        ...prev,
-                        startTime: e.target.value,
-                      }))
-                    }
-                  />
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-row gap-2">
+                    <Input
+                      type="time"
+                      className=" border-orange-500 text-center"
+                      placeholder="Start time"
+                      value={newTask.startTime}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          startTime: e.target.value,
+                        }))
+                      }
+                    />
 
-                  <Input
-                    type="time"
-                    className="w-[7.3rem] border-orange-500"
-                    placeholder="End time"
-                    value={newTask.endTime}
-                    onChange={(e) =>
-                      setNewTask((prev) => ({
-                        ...prev,
-                        endTime: e.target.value,
-                      }))
-                    }
-                  />
+                    <Input
+                      type="time"
+                      className=" border-orange-500 text-center"
+                      placeholder="End time"
+                      value={newTask.endTime}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          endTime: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
 
                   <Input
                     placeholder="Task name"

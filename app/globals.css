@@ -42,24 +42,24 @@
 
 .dark {
   /* Updated dark mode tokens to maintain orange theme with proper contrast */
-  --background: oklch(0.1 0 0);
+  --background: oklch(22.213% 0.00003 271.152);
   --foreground: oklch(0.95 0 0);
-  --card: oklch(0.12 0 0);
+  --card: oklch(28.606% 0.00145 16.005);
   --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.12 0 0);
+  --popover: oklch(24.354% 0.00003 271.152);
   --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.7 0.15 35);
-  --primary-foreground: oklch(0.1 0 0);
+  --primary: oklch(73.741% 0.16952 56.324);
+  --primary-foreground: oklch(95.514% 0.00011 271.152);
   --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted: oklch(23.613% 0.00152 16.294);
+  --muted-foreground: oklch(78.577% 0.00009 271.152);
   --accent: oklch(0.2 0 0);
   --accent-foreground: oklch(0.95 0 0);
   --destructive: oklch(0.5 0.2 25);
   --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.2 0 0);
-  --input: oklch(0.15 0 0);
+  --border: oklch(37.53% 0.00004 271.152);
+  --input: oklch(31.815% 0.00141 15.817);
   --ring: oklch(0.7 0.15 35);
   --chart-1: oklch(0.7 0.15 35);
   --chart-2: oklch(0.75 0.12 65);
@@ -70,9 +70,9 @@
   --sidebar-foreground: oklch(0.95 0 0);
   --sidebar-primary: oklch(0.7 0.15 35);
   --sidebar-primary-foreground: oklch(0.1 0 0);
-  --sidebar-accent: oklch(0.15 0 0);
+  --sidebar-accent: oklch(24.498% 0.0077 17.492);
   --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.2 0 0);
+  --sidebar-border: oklch(25.723% 0.00149 16.173);
   --sidebar-ring: oklch(0.7 0.15 35);
 }
 
