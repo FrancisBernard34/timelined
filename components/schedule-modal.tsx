@@ -63,6 +63,7 @@ export function ScheduleModal({
   });
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
 
   const handleAddTask = () => {
     if (!newTask.name.trim() || !newTask.startTime || !newTask.endTime) return;
@@ -96,6 +97,22 @@ export function ScheduleModal({
 
   const handleDeletePeriod = () => {
     onDeletePeriod(period.id);
+  };
+
+  const handleCloneTasks = (fromDay: number) => {
+    const tasksToClone = tasks.filter((task) => task.dayOfWeek === fromDay);
+    if (tasksToClone.length === 0) return;
+    
+    const clonedTasks = tasksToClone.map((task) => ({
+      ...task,
+      id: crypto.randomUUID(),
+      dayOfWeek: selectedDayOfWeek,
+    }));
+
+    const updatedTasks = [...tasks, ...clonedTasks];
+    setTasks(updatedTasks);
+    onUpdateSchedule(period.id, updatedTasks);
+    setIsCloning(false);
   };
 
   const formatTime = (time: string) => {
@@ -185,7 +202,27 @@ export function ScheduleModal({
             <div className="text-center py-12 text-muted-foreground">
               <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No tasks scheduled yet</p>
-              <p className="text-sm">Add your first task to get started</p>
+              <p className="text-sm">Add your first task or <span onClick={() => setIsCloning(true)} className="text-orange-500 font-bold hover:underline cursor-pointer">clone</span> tasks from another day</p>
+              {isCloning && (
+                <div className="mt-4 p-4 border border-border rounded-lg bg-secondary">
+                  <p className="mb-2 font-medium">Clone Tasks From:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {daysOfWeek.map((dayName, index) => {
+                      if (index === selectedDayOfWeek) return null;
+                      return (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="w-full justify-start cursor-pointer"
+                          onClick={() => handleCloneTasks(index)}
+                        >
+                          {dayName}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <TooltipProvider>
