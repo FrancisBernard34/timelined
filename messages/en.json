@@ -1,0 +1,104 @@
+{
+  "Metadata": {
+    "title": "Timelined - Daily Schedule Application",
+    "description": "Track your schedules across time with interactive timeline management"
+  },
+  "App": {
+    "brand": "Timelined",
+    "tagline": "Track your schedules across time",
+    "loading": "Loading…",
+    "newPeriod": "New Period",
+    "periodNamePlaceholder": "Period name...",
+    "create": "Create",
+    "cancel": "Cancel",
+    "logOut": "Log out",
+    "errors": {
+      "duplicate": "A period already exists for this month. Only one period per month is allowed.",
+      "createFailed": "Could not create the period. Please try again."
+    }
+  },
+  "Auth": {
+    "loginSubtitle": "Log in to track your schedules",
+    "signupSubtitle": "Create an account to get started",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "At least 8 characters",
+    "submitLogin": "Log in",
+    "submitSignup": "Create account",
+    "submitting": "Please wait…",
+    "toSignup": "Need an account? Sign up",
+    "toLogin": "Already have an account? Log in",
+    "invalidCredentials": "Invalid email or password.",
+    "emailTaken": "An account with this email already exists.",
+    "invalidInput": "Please check your details and try again.",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "ThemeToggle": {
+    "label": "Toggle theme"
+  },
+  "LocaleSwitcher": {
+    "label": "Language"
+  },
+  "Timeline": {
+    "hint": "Drag to navigate the timeline • Click on periods to view schedules"
+  },
+  "Schedule": {
+    "title": "{name} Schedule",
+    "createdIn": "Created in {date}",
+    "deletePeriod": "Delete Period",
+    "noTasks": "No tasks scheduled yet",
+    "emptyHint": "Add your first task or <clone>clone</clone> tasks from another day",
+    "dragTip": "Tip: drag a task onto another day above to reschedule it.",
+    "cloneFrom": "Clone Tasks From:",
+    "addNewTask": "Add New Task",
+    "addTask": "Add Task",
+    "cancel": "Cancel",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "taskName": "Task name",
+    "saveTask": "Save task",
+    "cancelEdit": "Cancel edit",
+    "editTask": "Edit task",
+    "deleteTask": "Delete task",
+    "deleteConfirmTitle": "Delete Period",
+    "deleteConfirmBody": "Are you sure you want to delete \"{name}\"? This action cannot be undone and will remove all tasks in this period.",
+    "delete": "Delete"
+  },
+  "Days": {
+    "long": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "short": {
+      "sunday": "Sun",
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    }
+  },
+  "Months": {
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Apr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Aug",
+    "sep": "Sep",
+    "oct": "Oct",
+    "nov": "Nov",
+    "dec": "Dec"
+  }
+}

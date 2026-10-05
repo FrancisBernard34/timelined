@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useRef, useState } from "react"
-import type { TimelinePeriod } from "@/app/page"
+import { useTranslations } from "next-intl"
+import type { TimelinePeriod } from "@/lib/types"
 
 interface TimelineProps {
   periods: TimelinePeriod[]
@@ -11,13 +12,18 @@ interface TimelineProps {
 }
 
 export function Timeline({ periods, onPeriodClick }: TimelineProps) {
+  const t = useTranslations("Timeline")
+  const tMonths = useTranslations("Months")
   const timelineRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 })
 
   const currentYear = new Date().getFullYear()
   const years = [currentYear - 1, currentYear, currentYear + 1]
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const months = [
+    "jan", "feb", "mar", "apr", "may", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec",
+  ].map((month) => tMonths(month))
 
   // Handle mouse drag
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -138,7 +144,7 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
 
       {/* Instructions */}
       <div className="mt-8 text-center text-muted-foreground text-sm">
-        <p>Drag to navigate the timeline • Click on periods to view schedules</p>
+        <p>{t("hint")}</p>
       </div>
     </div>
   )

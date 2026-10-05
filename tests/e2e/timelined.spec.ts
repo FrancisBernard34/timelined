@@ -45,6 +45,38 @@ test("rejects unauthenticated API requests", async ({ playwright }) => {
   await anon.dispose();
 });
 
+test("redirects the root to the default locale", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/en$/);
+});
+
+test("renders in Portuguese at /pt-br", async ({ page }) => {
+  await page.goto("/pt-br");
+  await expect(
+    page.getByRole("button", { name: "Novo Período" }),
+  ).toBeVisible();
+});
+
+test("switches language with the locale switcher", async ({ page }) => {
+  await page.goto("/en");
+  await page.getByLabel("Language").selectOption("pt-br");
+  await expect(page).toHaveURL(/\/pt-br$/);
+  await expect(
+    page.getByRole("button", { name: "Novo Período" }),
+  ).toBeVisible();
+});
+
+test("has a working theme toggle on the login screen", async ({ page }) => {
+  await page.goto("/en");
+  await page.getByRole("button", { name: "Log out" }).click();
+
+  const toggle = page.getByRole("button", { name: "Toggle theme" });
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+
+  await expect(page.locator("html")).toHaveClass(/dark/);
+});
+
 test("signs up a new user through the UI", async ({ page }) => {
   const fresh = `ui-${Date.now()}@test.dev`;
 

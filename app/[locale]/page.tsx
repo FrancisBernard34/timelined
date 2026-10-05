@@ -1,32 +1,18 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { Plus, Moon, Sun, LogOut } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Plus, LogOut } from "lucide-react"
 import { Timeline } from "@/components/timeline"
 import { ScheduleModal } from "@/components/schedule-modal"
 import { AuthForm, type AuthUser } from "@/components/auth-form"
-
-export interface TimelinePeriod {
-  id: string
-  name: string
-  month: number
-  year: number
-  createdAt: string
-  schedule: ScheduleTask[]
-}
-
-export interface ScheduleTask {
-  id: string
-  name: string
-  startTime: string
-  endTime: string
-  dayOfWeek: number // 0 = Sunday, 1 = Monday, etc.
-}
+import { ThemeToggle } from "@/components/theme-toggle"
+import { LocaleSwitcher } from "@/components/locale-switcher"
+import type { ScheduleTask, TimelinePeriod } from "@/lib/types"
 
 export default function TimelinedApp() {
-  const { theme, setTheme } = useTheme()
+  const t = useTranslations("App")
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [periods, setPeriods] = useState<TimelinePeriod[]>([])
@@ -91,11 +77,11 @@ export default function TimelinedApp() {
     })
 
     if (response.status === 409) {
-      alert("A period already exists for this month. Only one period per month is allowed.")
+      alert(t("errors.duplicate"))
       return
     }
     if (!response.ok) {
-      alert("Could not create the period. Please try again.")
+      alert(t("errors.createFailed"))
       return
     }
 
@@ -132,7 +118,7 @@ export default function TimelinedApp() {
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground">{t("loading")}</p>
       </div>
     )
   }
@@ -147,11 +133,11 @@ export default function TimelinedApp() {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Timelined</h1>
-            <p className="text-sm text-muted-foreground">Track your schedules across time</p>
+            <h1 className="text-2xl font-bold text-foreground">{t("brand")}</h1>
+            <p className="text-sm text-muted-foreground">{t("tagline")}</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Create Period Button */}
             {!isCreatingPeriod ? (
               <Button
@@ -159,13 +145,13 @@ export default function TimelinedApp() {
                 className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Period
+                {t("newPeriod")}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Period name..."
+                  placeholder={t("periodNamePlaceholder")}
                   value={newPeriodName}
                   onChange={(e) => setNewPeriodName(e.target.value)}
                   onKeyDown={(e) => {
@@ -183,7 +169,7 @@ export default function TimelinedApp() {
                   size="sm"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                 >
-                  Create
+                  {t("create")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -194,20 +180,16 @@ export default function TimelinedApp() {
                   size="sm"
                   variant="outline"
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
               </div>
             )}
 
-            {/* Theme Toggle */}
-            <Button className="cursor-pointer" variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+            <LocaleSwitcher />
+            <ThemeToggle />
 
             {/* Account */}
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
+            <div className="flex items-center gap-2 pl-3 border-l border-border">
               <span className="hidden sm:inline text-sm text-muted-foreground max-w-[180px] truncate">
                 {user.name ?? user.email}
               </span>
@@ -216,7 +198,7 @@ export default function TimelinedApp() {
                 size="icon"
                 onClick={handleLogout}
                 className="cursor-pointer"
-                aria-label="Log out"
+                aria-label={t("logOut")}
               >
                 <LogOut className="h-4 w-4" />
               </Button>

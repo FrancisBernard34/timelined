@@ -16,7 +16,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Plus, Trash2, Clock, Pencil, Check, X } from "lucide-react";
-import type { TimelinePeriod, ScheduleTask } from "@/app/page";
+import { useLocale, useTranslations } from "next-intl";
+import type { TimelinePeriod, ScheduleTask } from "@/lib/types";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -26,15 +27,15 @@ interface ScheduleModalProps {
   onDeletePeriod: (periodId: string) => void;
 }
 
-const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const DAY_KEYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+] as const;
 
 export function ScheduleModal({
   isOpen,
@@ -43,6 +44,12 @@ export function ScheduleModal({
   onUpdateSchedule,
   onDeletePeriod,
 }: ScheduleModalProps) {
+  const t = useTranslations("Schedule");
+  const tDays = useTranslations("Days");
+  const locale = useLocale();
+  const daysOfWeek = DAY_KEYS.map((day) => tDays(`long.${day}`));
+  const daysShort = DAY_KEYS.map((day) => tDays(`short.${day}`));
+
   const [tasks, setTasks] = useState<ScheduleTask[]>(period.schedule || []);
   const [currentDayTasks, setCurrentDayTasks] = useState<ScheduleTask[]>([]);
   const [selectedDayOfWeek, setSelectedDayOfWeek] = useState(
@@ -199,13 +206,14 @@ export function ScheduleModal({
           <div className="flex items-center justify-between mt-4">
             <div>
               <DialogTitle className="text-xl font-bold text-foreground">
-                {period.name} Schedule
+                {t("title", { name: period.name })}
               </DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Created in{" "}
-                {new Date(period.createdAt).toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
+                {t("createdIn", {
+                  date: new Date(period.createdAt).toLocaleDateString(locale, {
+                    month: "long",
+                    year: "numeric",
+                  }),
                 })}
               </p>
             </div>
@@ -216,7 +224,7 @@ export function ScheduleModal({
               className="ml-4 cursor-pointer"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete Period
+              {t("deletePeriod")}
             </Button>
           </div>
         </DialogHeader>
@@ -260,7 +268,7 @@ export function ScheduleModal({
                         : "border-border text-muted-foreground hover:bg-secondary"
                   }`}
                 >
-                  {dayName.slice(0, 3)}
+                  {daysShort[index]}
                   {count > 0 && (
                     <span className="ml-1 text-xs opacity-70">{count}</span>
                   )}
@@ -273,12 +281,23 @@ export function ScheduleModal({
           {currentDayTasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No tasks scheduled yet</p>
-              <p className="text-sm">Add your first task or <span onClick={() => setIsCloning(true)} className="text-orange-500 font-bold hover:underline cursor-pointer">clone</span> tasks from another day</p>
-              <p className="text-xs mt-2">Tip: drag a task onto another day above to reschedule it.</p>
+              <p>{t("noTasks")}</p>
+              <p className="text-sm">
+                {t.rich("emptyHint", {
+                  clone: (chunks) => (
+                    <span
+                      onClick={() => setIsCloning(true)}
+                      className="text-orange-500 font-bold hover:underline cursor-pointer"
+                    >
+                      {chunks}
+                    </span>
+                  ),
+                })}
+              </p>
+              <p className="text-xs mt-2">{t("dragTip")}</p>
               {isCloning && (
                 <div className="mt-4 p-4 border border-border rounded-lg bg-secondary">
-                  <p className="mb-2 font-medium">Clone Tasks From:</p>
+                  <p className="mb-2 font-medium">{t("cloneFrom")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {daysOfWeek.map((dayName, index) => {
                       if (index === selectedDayOfWeek) return null;
@@ -322,7 +341,7 @@ export function ScheduleModal({
                       <>
                         <Input
                           type="time"
-                          aria-label="Start time"
+                          aria-label={t("startTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.startTime}
                           onChange={(e) =>
@@ -334,7 +353,7 @@ export function ScheduleModal({
                         />
                         <Input
                           type="time"
-                          aria-label="End time"
+                          aria-label={t("endTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.endTime}
                           onChange={(e) =>
@@ -345,7 +364,7 @@ export function ScheduleModal({
                           }
                         />
                         <Input
-                          aria-label="Task name"
+                          aria-label={t("taskName")}
                           className="flex-1 h-[2rem] border-orange-500"
                           value={editDraft.name}
                           onChange={(e) =>
@@ -361,7 +380,7 @@ export function ScheduleModal({
                         />
                         <Button
                           size="sm"
-                          aria-label="Save task"
+                          aria-label={t("saveTask")}
                           className="h-[2rem] cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
                           onClick={saveEdit}
                         >
@@ -370,7 +389,7 @@ export function ScheduleModal({
                         <Button
                           size="sm"
                           variant="outline"
-                          aria-label="Cancel edit"
+                          aria-label={t("cancelEdit")}
                           className="h-[2rem] cursor-pointer"
                           onClick={cancelEdit}
                         >
@@ -404,7 +423,7 @@ export function ScheduleModal({
                         <Button
                           variant="outline"
                           size="sm"
-                          aria-label="Edit task"
+                          aria-label={t("editTask")}
                           className="h-[2rem] cursor-pointer"
                           onClick={() => startEdit(task)}
                         >
@@ -413,7 +432,7 @@ export function ScheduleModal({
                         <Button
                           variant="default"
                           size="sm"
-                          aria-label="Delete task"
+                          aria-label={t("deleteTask")}
                           className="h-[2rem] cursor-pointer bg-red-500"
                           onClick={() => handleDeleteTask(task.id)}
                         >
@@ -434,7 +453,7 @@ export function ScheduleModal({
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add New Task
+                {t("addNewTask")}
               </Button>
             ) : (
               <div className="space-y-4">
@@ -443,7 +462,7 @@ export function ScheduleModal({
                     <Input
                       type="time"
                       className=" border-orange-500 text-center"
-                      placeholder="Start time"
+                      placeholder={t("startTime")}
                       value={newTask.startTime}
                       onChange={(e) =>
                         setNewTask((prev) => ({
@@ -456,7 +475,7 @@ export function ScheduleModal({
                     <Input
                       type="time"
                       className=" border-orange-500 text-center"
-                      placeholder="End time"
+                      placeholder={t("endTime")}
                       value={newTask.endTime}
                       onChange={(e) =>
                         setNewTask((prev) => ({
@@ -468,7 +487,7 @@ export function ScheduleModal({
                   </div>
 
                   <Input
-                    placeholder="Task name"
+                    placeholder={t("taskName")}
                     className="border-orange-500"
                     value={newTask.name}
                     onChange={(e) =>
@@ -482,7 +501,7 @@ export function ScheduleModal({
                     onClick={handleAddTask}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                   >
-                    Add Task
+                    {t("addTask")}
                   </Button>
                   <Button
                     variant="outline"
@@ -497,7 +516,7 @@ export function ScheduleModal({
                     }}
                     className="cursor-pointer"
                   >
-                    Cancel
+                    {t("cancel")}
                   </Button>
                 </div>
               </div>
@@ -510,21 +529,20 @@ export function ScheduleModal({
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-card border border-border rounded-lg p-6 max-w-md mx-4">
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Delete Period
+                {t("deleteConfirmTitle")}
               </h3>
               <p className="text-muted-foreground mb-4">
-                Are you sure you want to delete "{period.name}"? This action
-                cannot be undone and will remove all tasks in this period.
+                {t("deleteConfirmBody", { name: period.name })}
               </p>
               <div className="flex gap-3 justify-end">
                 <Button
                   variant="outline"
                   onClick={() => setShowDeleteConfirmation(false)}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button variant="destructive" onClick={handleDeletePeriod}>
-                  Delete
+                  {t("delete")}
                 </Button>
               </div>
             </div>

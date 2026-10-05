@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export type AuthUser = { id: string; email: string; name: string | null };
 
@@ -15,12 +25,22 @@ export function AuthForm({
 }: {
   onAuthenticated: (user: AuthUser) => void;
 }) {
+  const t = useTranslations("Auth");
+  const tApp = useTranslations("App");
+
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const errorForStatus = (status: number) => {
+    if (status === 401) return t("invalidCredentials");
+    if (status === 409) return t("emailTaken");
+    if (status === 400) return t("invalidInput");
+    return t("genericError");
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -42,7 +62,7 @@ export function AuthForm({
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data?.error ?? "Something went wrong. Please try again.");
+        setError(errorForStatus(response.status));
         return;
       }
 
@@ -59,45 +79,48 @@ export function AuthForm({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="absolute top-4 right-4 flex items-center gap-3">
+        <LocaleSwitcher />
+        <ThemeToggle />
+      </div>
+
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Timelined</CardTitle>
+          <CardTitle className="text-2xl">{tApp("brand")}</CardTitle>
           <CardDescription>
-            {mode === "login"
-              ? "Log in to track your schedules"
-              : "Create an account to get started"}
+            {mode === "login" ? t("loginSubtitle") : t("signupSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-1">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("name")}</Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Your name"
+                  placeholder={t("namePlaceholder")}
                   autoComplete="name"
                 />
               </div>
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input
                 id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 autoComplete="email"
               />
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -105,7 +128,7 @@ export function AuthForm({
                 minLength={8}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="At least 8 characters"
+                placeholder={t("passwordPlaceholder")}
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
             </div>
@@ -118,10 +141,10 @@ export function AuthForm({
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
             >
               {isSubmitting
-                ? "Please wait…"
+                ? t("submitting")
                 : mode === "login"
-                  ? "Log in"
-                  : "Create account"}
+                  ? t("submitLogin")
+                  : t("submitSignup")}
             </Button>
           </form>
 
@@ -130,9 +153,7 @@ export function AuthForm({
             onClick={switchMode}
             className="mt-4 w-full text-center text-sm text-muted-foreground hover:underline cursor-pointer"
           >
-            {mode === "login"
-              ? "Need an account? Sign up"
-              : "Already have an account? Log in"}
+            {mode === "login" ? t("toSignup") : t("toLogin")}
           </button>
         </CardContent>
       </Card>
