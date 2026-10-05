@@ -1,4 +1,7 @@
-ignoredBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  prisma: true
+  sharp: true

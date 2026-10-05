@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
@@ -12,7 +12,7 @@ export interface TimelinePeriod {
   name: string
   month: number
   year: number
-  createdAt: Date
+  createdAt: string
   schedule: ScheduleTask[]
 }
 
@@ -32,54 +32,42 @@ export default function TimelinedApp() {
   const [newPeriodName, setNewPeriodName] = useState("")
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false)
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const savedPeriods = localStorage.getItem("timelined-periods")
-    if (savedPeriods) {
-      const parsed = JSON.parse(savedPeriods)
-      setPeriods(
-        parsed.map((p: any) => ({
-          ...p,
-          createdAt: new Date(p.createdAt),
-        })),
-      )
+  const loadPeriods = useCallback(async () => {
+    const response = await fetch("/api/periods", { cache: "no-store" })
+    if (response.ok) {
+      setPeriods(await response.json())
     }
   }, [])
 
-  // Save to localStorage whenever periods change
   useEffect(() => {
-    if (periods.length > 0) {
-      localStorage.setItem("timelined-periods", JSON.stringify(periods))
-    }
-  }, [periods])
+    loadPeriods()
+  }, [loadPeriods])
 
-  const handleCreatePeriod = () => {
+  const handleCreatePeriod = async () => {
     if (!newPeriodName.trim()) return
 
     const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
+    const response = await fetch("/api/periods", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newPeriodName.trim(),
+        month: now.getMonth(),
+        year: now.getFullYear(),
+      }),
+    })
 
-    // Check if a period already exists for the current month and year
-    const existingPeriod = periods.find(
-      (period) => period.month === currentMonth && period.year === currentYear
-    )
-
-    if (existingPeriod) {
-      alert(`A period "${existingPeriod.name}" already exists for this month. Only one period per month is allowed.`)
+    if (response.status === 409) {
+      alert("A period already exists for this month. Only one period per month is allowed.")
+      return
+    }
+    if (!response.ok) {
+      alert("Could not create the period. Please try again.")
       return
     }
 
-    const newPeriod: TimelinePeriod = {
-      id: crypto.randomUUID(),
-      name: newPeriodName.trim(),
-      month: currentMonth,
-      year: currentYear,
-      createdAt: now,
-      schedule: [],
-    }
-
-    setPeriods((prev) => [...prev, newPeriod])
+    const created: TimelinePeriod = await response.json()
+    setPeriods((prev) => [...prev, created])
     setNewPeriodName("")
     setIsCreatingPeriod(false)
   }
@@ -89,14 +77,23 @@ export default function TimelinedApp() {
     setIsModalOpen(true)
   }
 
-  const handleUpdateSchedule = (periodId: string, schedule: ScheduleTask[]) => {
+  const handleUpdateSchedule = async (periodId: string, schedule: ScheduleTask[]) => {
     setPeriods((prev) => prev.map((p) => (p.id === periodId ? { ...p, schedule } : p)))
+    setSelectedPeriod((prev) => (prev && prev.id === periodId ? { ...prev, schedule } : prev))
+
+    await fetch(`/api/periods/${periodId}/schedule`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tasks: schedule }),
+    })
   }
 
-  const handleDeletePeriod = (periodId: string) => {
+  const handleDeletePeriod = async (periodId: string) => {
     setPeriods((prev) => prev.filter((p) => p.id !== periodId))
     setIsModalOpen(false)
     setSelectedPeriod(null)
+
+    await fetch(`/api/periods/${periodId}`, { method: "DELETE" })
   }
 
   return (

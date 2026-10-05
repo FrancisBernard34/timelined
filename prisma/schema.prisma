@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Period {
+  id        String   @id @default(cuid())
+  name      String
+  month     Int
+  year      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+
+  @@unique([month, year])
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  periodId  String
+  period    Period   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  name      String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+
+  @@index([periodId])
+}
