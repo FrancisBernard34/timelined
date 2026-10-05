@@ -13,7 +13,7 @@ A timeline-based planner for tracking schedules and routines across periods of t
 - Create a period (one per month) with a custom name
 - Add tasks with a day of the week, start time, and end time
 - Visual timeline of periods you can drag to navigate
-- Per-period schedule editor — add, remove, and clone tasks between days
+- Per-period schedule editor — add, remove, clone, and edit tasks between days
 - Light/dark theme (system-aware)
 - Data persisted server-side in PostgreSQL, scoped per user
 
@@ -151,7 +151,7 @@ separate workflow runs the Playwright end-to-end suite.
 ## Roadmap
 
 - [x] User accounts and per-user periods
-- [ ] Edit existing tasks inline
+- [x] Edit existing tasks inline
 - [ ] Drag-and-drop tasks on the timeline
 - [ ] Recurring tasks and exceptions
 - [x] Playwright end-to-end tests

@@ -105,6 +105,48 @@ test("creates a period, adds a task, and it persists after reload", async ({
   await expect(page.getByText("Morning standup")).toBeVisible();
 });
 
+test("edits an existing task inline", async ({ page }) => {
+  const periodName = `Edit ${Date.now()}`;
+
+  await page.goto("/");
+  const day = await page.evaluate(() => new Date().getDay());
+  const month = await page.evaluate(() => new Date().getMonth());
+  const year = await page.evaluate(() => new Date().getFullYear());
+
+  const created = await page.request.post("/api/periods", {
+    data: { name: periodName, month, year },
+  });
+  const period = await created.json();
+  await page.request.put(`/api/periods/${period.id}/schedule`, {
+    data: {
+      tasks: [
+        { name: "Old name", dayOfWeek: day, startTime: "09:00", endTime: "10:00" },
+      ],
+    },
+  });
+
+  await page.reload();
+  await page.getByText(periodName, { exact: true }).click();
+  await expect(page.getByText("Old name")).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit task" }).click();
+  await page.getByLabel("Task name").fill("New name");
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/schedule") &&
+      response.request().method() === "PUT",
+  );
+  await page.getByRole("button", { name: "Save task" }).click();
+  await saved;
+
+  await expect(page.getByText("New name")).toBeVisible();
+
+  await page.reload();
+  await page.getByText(periodName, { exact: true }).click();
+  await expect(page.getByText("New name")).toBeVisible();
+});
+
 test("rejects a second period for the same month", async ({ page }) => {
   await page.request.post("/api/periods", {
     data: {

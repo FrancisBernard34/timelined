@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Plus, Trash2, Clock, Pencil, Check, X } from "lucide-react";
 import type { TimelinePeriod, ScheduleTask } from "@/app/page";
 
 interface ScheduleModalProps {
@@ -64,6 +64,49 @@ export function ScheduleModal({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState({
+    name: "",
+    startTime: "",
+    endTime: "",
+  });
+
+  const startEdit = (task: ScheduleTask) => {
+    setEditingTaskId(task.id);
+    setEditDraft({
+      name: task.name,
+      startTime: task.startTime,
+      endTime: task.endTime,
+    });
+  };
+
+  const saveEdit = () => {
+    if (
+      !editingTaskId ||
+      !editDraft.name.trim() ||
+      !editDraft.startTime ||
+      !editDraft.endTime
+    ) {
+      return;
+    }
+
+    const updatedTasks = tasks.map((task) =>
+      task.id === editingTaskId
+        ? {
+            ...task,
+            name: editDraft.name.trim(),
+            startTime: editDraft.startTime,
+            endTime: editDraft.endTime,
+          }
+        : task,
+    );
+
+    setTasks(updatedTasks);
+    onUpdateSchedule(period.id, updatedTasks);
+    setEditingTaskId(null);
+  };
+
+  const cancelEdit = () => setEditingTaskId(null);
 
   const handleAddTask = () => {
     if (!newTask.name.trim() || !newTask.startTime || !newTask.endTime) return;
@@ -232,36 +275,109 @@ export function ScheduleModal({
                     key={task.id}
                     className="flex items-center justify-between gap-2 bg-transparent"
                   >
-                    <div className="w-[15%] h-[2rem]  border border-orange-500 rounded-lg p-2 select-none">
-                      <p className="text-sm text-muted-foreground leading-none">
-                        {task.startTime}
-                      </p>
-                    </div>
-                    <div className="w-[15%] h-[2rem] border border-orange-500 rounded-lg p-2 select-none">
-                      <p className="text-sm text-muted-foreground leading-none">
-                        {task.endTime}
-                      </p>
-                    </div>
-                    <div className="w-[60%] max-w-[260px] h-[2rem] border border-orange-500 rounded-lg p-2 flex items-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <p className="font-medium text-foreground leading-none truncate cursor-default">
-                            {task.name}
+                    {editingTaskId === task.id ? (
+                      <>
+                        <Input
+                          type="time"
+                          aria-label="Start time"
+                          className="w-[15%] h-[2rem] border-orange-500 text-center"
+                          value={editDraft.startTime}
+                          onChange={(e) =>
+                            setEditDraft((prev) => ({
+                              ...prev,
+                              startTime: e.target.value,
+                            }))
+                          }
+                        />
+                        <Input
+                          type="time"
+                          aria-label="End time"
+                          className="w-[15%] h-[2rem] border-orange-500 text-center"
+                          value={editDraft.endTime}
+                          onChange={(e) =>
+                            setEditDraft((prev) => ({
+                              ...prev,
+                              endTime: e.target.value,
+                            }))
+                          }
+                        />
+                        <Input
+                          aria-label="Task name"
+                          className="flex-1 h-[2rem] border-orange-500"
+                          value={editDraft.name}
+                          onChange={(e) =>
+                            setEditDraft((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEdit();
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          aria-label="Save task"
+                          className="h-[2rem] cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                          onClick={saveEdit}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label="Cancel edit"
+                          className="h-[2rem] cursor-pointer"
+                          onClick={cancelEdit}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-[15%] h-[2rem] border border-orange-500 rounded-lg p-2 select-none">
+                          <p className="text-sm text-muted-foreground leading-none">
+                            {task.startTime}
                           </p>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs break-words">{task.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-[10%] h-[2rem] cursor-pointer bg-red-500"
-                      onClick={() => handleDeleteTask(task.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                        </div>
+                        <div className="w-[15%] h-[2rem] border border-orange-500 rounded-lg p-2 select-none">
+                          <p className="text-sm text-muted-foreground leading-none">
+                            {task.endTime}
+                          </p>
+                        </div>
+                        <div className="flex-1 max-w-[260px] h-[2rem] border border-orange-500 rounded-lg p-2 flex items-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="font-medium text-foreground leading-none truncate cursor-default">
+                                {task.name}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs break-words">{task.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          aria-label="Edit task"
+                          className="h-[2rem] cursor-pointer"
+                          onClick={() => startEdit(task)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          aria-label="Delete task"
+                          className="h-[2rem] cursor-pointer bg-red-500"
+                          onClick={() => handleDeleteTask(task.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
