@@ -4,7 +4,7 @@
 
 A timeline-based planner for tracking schedules and routines across periods of the year. Create a "period" for each month, lay out recurring tasks on a visual timeline, and keep everything persisted in a PostgreSQL database.
 
-**[Live demo →](https://timelined.vercel.app)** _(coming soon)_
+**[Live demo →](https://timelined.vercel.app)**
 
 ## Features
 
