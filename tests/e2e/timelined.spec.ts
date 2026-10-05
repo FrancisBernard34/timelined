@@ -147,6 +147,50 @@ test("edits an existing task inline", async ({ page }) => {
   await expect(page.getByText("New name")).toBeVisible();
 });
 
+test("moves a task to another day by dragging it", async ({ page }) => {
+  const periodName = `Drag ${Date.now()}`;
+
+  await page.goto("/");
+  const today = await page.evaluate(() => new Date().getDay());
+  const month = await page.evaluate(() => new Date().getMonth());
+  const year = await page.evaluate(() => new Date().getFullYear());
+  const targetDay = (today + 1) % 7;
+
+  const created = await page.request.post("/api/periods", {
+    data: { name: periodName, month, year },
+  });
+  const period = await created.json();
+  await page.request.put(`/api/periods/${period.id}/schedule`, {
+    data: {
+      tasks: [
+        { name: "Movable", dayOfWeek: today, startTime: "09:00", endTime: "10:00" },
+      ],
+    },
+  });
+
+  await page.reload();
+  await page.getByText(periodName, { exact: true }).click();
+  await expect(page.getByTestId("task-card")).toBeVisible();
+
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes("/schedule") &&
+      response.request().method() === "PUT",
+  );
+  await page
+    .getByTestId("task-card")
+    .dragTo(page.getByTestId(`day-${targetDay}`));
+  await saved;
+
+  // The drop selects the target day, so the task stays on screen.
+  await expect(page.getByTestId("task-card")).toBeVisible();
+
+  await page.reload();
+  await page.getByText(periodName, { exact: true }).click();
+  await page.getByTestId(`day-${targetDay}`).click();
+  await expect(page.getByText("Movable")).toBeVisible();
+});
+
 test("rejects a second period for the same month", async ({ page }) => {
   await page.request.post("/api/periods", {
     data: {

@@ -10,13 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -70,6 +63,8 @@ export function ScheduleModal({
     startTime: "",
     endTime: "",
   });
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null);
 
   const startEdit = (task: ScheduleTask) => {
     setEditingTaskId(task.id);
@@ -107,6 +102,15 @@ export function ScheduleModal({
   };
 
   const cancelEdit = () => setEditingTaskId(null);
+
+  const moveTaskToDay = (taskId: string, day: number) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === taskId ? { ...task, dayOfWeek: day } : task,
+    );
+    setTasks(updatedTasks);
+    onUpdateSchedule(period.id, updatedTasks);
+    setSelectedDayOfWeek(day);
+  };
 
   const handleAddTask = () => {
     if (!newTask.name.trim() || !newTask.startTime || !newTask.endTime) return;
@@ -218,26 +222,51 @@ export function ScheduleModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Select Day of the Week */}
-          <div className="w-48">
-            <Select
-              value={String(selectedDayOfWeek)}
-              onValueChange={(value) => {
-                const day = Number.parseInt(value);
-                setSelectedDayOfWeek(day);
-              }}
-            >
-              <SelectTrigger className="w-full border-orange-500">
-                <SelectValue placeholder="Select Day of the Week" />
-              </SelectTrigger>
-              <SelectContent>
-                {daysOfWeek.map((dayName, index) => (
-                  <SelectItem key={index} value={String(index)}>
-                    {dayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Day tabs: click to view a day, drop a task on one to move it there.
+              ponytail: native HTML5 drag-and-drop is desktop-only; add dnd-kit/pointer events for touch. */}
+          <div className="flex flex-wrap gap-2">
+            {daysOfWeek.map((dayName, index) => {
+              const count = tasksByDay[index]?.length ?? 0;
+              const isSelected = selectedDayOfWeek === index;
+              const isDragOver = dragOverDay === index;
+              return (
+                <button
+                  key={dayName}
+                  type="button"
+                  data-testid={`day-${index}`}
+                  aria-label={dayName}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedDayOfWeek(index)}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragOverDay(index);
+                  }}
+                  onDragLeave={() =>
+                    setDragOverDay((prev) => (prev === index ? null : prev))
+                  }
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const taskId =
+                      event.dataTransfer.getData("text/plain") || draggingTaskId;
+                    if (taskId) moveTaskToDay(taskId, index);
+                    setDragOverDay(null);
+                    setDraggingTaskId(null);
+                  }}
+                  className={`px-3 py-2 rounded-md text-sm border cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : isDragOver
+                        ? "border-orange-500 bg-secondary"
+                        : "border-border text-muted-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {dayName.slice(0, 3)}
+                  {count > 0 && (
+                    <span className="ml-1 text-xs opacity-70">{count}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Schedule Display */}
@@ -246,6 +275,7 @@ export function ScheduleModal({
               <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No tasks scheduled yet</p>
               <p className="text-sm">Add your first task or <span onClick={() => setIsCloning(true)} className="text-orange-500 font-bold hover:underline cursor-pointer">clone</span> tasks from another day</p>
+              <p className="text-xs mt-2">Tip: drag a task onto another day above to reschedule it.</p>
               {isCloning && (
                 <div className="mt-4 p-4 border border-border rounded-lg bg-secondary">
                   <p className="mb-2 font-medium">Clone Tasks From:</p>
@@ -273,7 +303,20 @@ export function ScheduleModal({
                 {currentDayTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center justify-between gap-2 bg-transparent"
+                    data-testid="task-card"
+                    draggable={editingTaskId !== task.id}
+                    onDragStart={(event) => {
+                      setDraggingTaskId(task.id);
+                      event.dataTransfer.setData("text/plain", task.id);
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => {
+                      setDraggingTaskId(null);
+                      setDragOverDay(null);
+                    }}
+                    className={`flex items-center justify-between gap-2 bg-transparent rounded-md transition-opacity ${
+                      editingTaskId !== task.id ? "cursor-grab active:cursor-grabbing" : ""
+                    } ${draggingTaskId === task.id ? "opacity-50" : ""}`}
                   >
                     {editingTaskId === task.id ? (
                       <>
