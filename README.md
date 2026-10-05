@@ -1,6 +1,7 @@
 # Timelined
 
 [![CI](https://github.com/FrancisBernard34/timelined/actions/workflows/ci.yml/badge.svg)](https://github.com/FrancisBernard34/timelined/actions/workflows/ci.yml)
+[![E2E](https://github.com/FrancisBernard34/timelined/actions/workflows/e2e.yml/badge.svg)](https://github.com/FrancisBernard34/timelined/actions/workflows/e2e.yml)
 
 A timeline-based planner for tracking schedules and routines across periods of the year. Create a "period" for each month, lay out recurring tasks on a visual timeline, and keep everything persisted in a PostgreSQL database.
 
@@ -22,7 +23,7 @@ A timeline-based planner for tracking schedules and routines across periods of t
 - **PostgreSQL** + **Prisma ORM**
 - **Zod** for request validation
 - **Tailwind CSS v4** + **shadcn/ui** (Radix UI)
-- **Vitest** for unit and integration tests
+- **Vitest** for unit and integration tests, **Playwright** for end-to-end tests
 
 ## Architecture
 
@@ -40,6 +41,7 @@ prisma/
   schema.prisma                  # Period + Task models
   migrations/                    # SQL migrations
 tests/                           # Vitest unit + integration tests
+tests/e2e/                       # Playwright end-to-end tests
 ```
 
 The API validates every request with Zod and returns DTOs; the data layer is a thin
@@ -91,6 +93,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm dev` | Start the dev server |
 | `pnpm build` | Production build |
 | `pnpm test` | Run unit + integration tests (needs a database) |
+| `pnpm test:e2e` | Run Playwright end-to-end tests (starts the app + needs a database) |
 | `pnpm db:migrate` | Create and apply a migration in development |
 | `pnpm db:deploy` | Apply migrations in production |
 | `pnpm db:studio` | Open Prisma Studio |
@@ -110,10 +113,12 @@ Unit tests cover the validation schemas; integration tests exercise the data lay
 against a real PostgreSQL database.
 
 ```bash
-pnpm test
+pnpm test      # Vitest: unit + integration
+pnpm test:e2e  # Playwright: full create → schedule → reload → delete flow
 ```
 
-CI runs linting, tests, and a production build against a Postgres service container.
+CI runs tests and a production build against a Postgres service container, and a
+separate workflow runs the Playwright end-to-end suite.
 
 ## Deployment
 
@@ -128,7 +133,7 @@ CI runs linting, tests, and a production build against a Postgres service contai
 - [ ] Edit existing tasks inline
 - [ ] Drag-and-drop tasks on the timeline
 - [ ] Recurring tasks and exceptions
-- [ ] Playwright end-to-end tests
+- [x] Playwright end-to-end tests
 
 ## License
 
