@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  credentialsSchema,
   createPeriodSchema,
+  signupSchema,
   taskSchema,
   updateScheduleSchema,
 } from "@/lib/validation";
@@ -91,5 +93,44 @@ describe("updateScheduleSchema", () => {
       tasks: [{ name: "A", dayOfWeek: 0, startTime: "00:00", endTime: "01:00" }],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("credentialsSchema", () => {
+  it("normalizes the email to lowercase", () => {
+    const result = credentialsSchema.safeParse({
+      email: "  User@Example.COM ",
+      password: "password123",
+    });
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.email).toBe("user@example.com");
+  });
+
+  it("rejects a short password", () => {
+    expect(
+      credentialsSchema.safeParse({ email: "a@b.co", password: "short" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an invalid email", () => {
+    expect(
+      credentialsSchema.safeParse({ email: "nope", password: "password123" })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("signupSchema", () => {
+  it("accepts an optional name", () => {
+    expect(
+      signupSchema.safeParse({
+        email: "a@b.co",
+        password: "password123",
+        name: "Francis",
+      }).success,
+    ).toBe(true);
+    expect(
+      signupSchema.safeParse({ email: "a@b.co", password: "password123" }).success,
+    ).toBe(true);
   });
 });

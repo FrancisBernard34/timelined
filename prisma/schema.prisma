@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  periods   Period[]
+}
+
 model Period {
   id        String   @id @default(cuid())
   name      String
@@ -14,9 +23,11 @@ model Period {
   year      Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks     Task[]
 
-  @@unique([month, year])
+  @@unique([userId, month, year])
 }
 
 model Task {

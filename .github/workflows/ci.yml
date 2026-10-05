@@ -28,6 +28,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/timelined_test?schema=public
+      SESSION_SECRET: ci-test-secret
 
     steps:
       - name: Checkout

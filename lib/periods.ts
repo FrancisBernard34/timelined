@@ -52,33 +52,46 @@ function toDTO(period: PeriodWithTasks): PeriodDTO {
   };
 }
 
-export async function listPeriods(): Promise<PeriodDTO[]> {
+export async function listPeriods(userId: string): Promise<PeriodDTO[]> {
   const periods = await prisma.period.findMany({
+    where: { userId },
     include,
     orderBy: [{ year: "asc" }, { month: "asc" }],
   });
   return periods.map(toDTO);
 }
 
-export async function createPeriod(input: CreatePeriodInput): Promise<PeriodDTO> {
+export async function createPeriod(
+  userId: string,
+  input: CreatePeriodInput,
+): Promise<PeriodDTO> {
   const period = await prisma.period.create({
-    data: { name: input.name, month: input.month, year: input.year },
+    data: {
+      name: input.name,
+      month: input.month,
+      year: input.year,
+      userId,
+    },
     include,
   });
   return toDTO(period);
 }
 
-export async function deletePeriod(id: string): Promise<boolean> {
-  const result = await prisma.period.deleteMany({ where: { id } });
+export async function deletePeriod(
+  userId: string,
+  id: string,
+): Promise<boolean> {
+  const result = await prisma.period.deleteMany({ where: { id, userId } });
   return result.count > 0;
 }
 
 export async function replaceTasks(
+  userId: string,
   periodId: string,
   tasks: TaskInput[],
 ): Promise<PeriodDTO | null> {
-  const exists = await prisma.period.findUnique({
-    where: { id: periodId },
+  const exists = await prisma.period.findFirst({
+    where: { id: periodId, userId },
     select: { id: true },
   });
   if (!exists) return null;

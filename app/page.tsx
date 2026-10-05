@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, Moon, Sun } from "lucide-react"
+import { Plus, Moon, Sun, LogOut } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Timeline } from "@/components/timeline"
 import { ScheduleModal } from "@/components/schedule-modal"
+import { AuthForm, type AuthUser } from "@/components/auth-form"
 
 export interface TimelinePeriod {
   id: string
@@ -26,6 +27,8 @@ export interface ScheduleTask {
 
 export default function TimelinedApp() {
   const { theme, setTheme } = useTheme()
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [periods, setPeriods] = useState<TimelinePeriod[]>([])
   const [selectedPeriod, setSelectedPeriod] = useState<TimelinePeriod | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -34,14 +37,44 @@ export default function TimelinedApp() {
 
   const loadPeriods = useCallback(async () => {
     const response = await fetch("/api/periods", { cache: "no-store" })
+    if (response.status === 401) {
+      setUser(null)
+      return
+    }
     if (response.ok) {
       setPeriods(await response.json())
     }
   }, [])
 
   useEffect(() => {
-    loadPeriods()
-  }, [loadPeriods])
+    let active = true
+    const checkSession = async () => {
+      const response = await fetch("/api/auth/me", { cache: "no-store" })
+      if (!active) return
+      if (response.ok) {
+        setUser(await response.json())
+      } else {
+        setUser(null)
+      }
+      setIsCheckingAuth(false)
+    }
+    checkSession()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (user) loadPeriods()
+  }, [user, loadPeriods])
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" })
+    setUser(null)
+    setPeriods([])
+    setSelectedPeriod(null)
+    setIsModalOpen(false)
+  }
 
   const handleCreatePeriod = async () => {
     if (!newPeriodName.trim()) return
@@ -94,6 +127,18 @@ export default function TimelinedApp() {
     setSelectedPeriod(null)
 
     await fetch(`/api/periods/${periodId}`, { method: "DELETE" })
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthForm onAuthenticated={setUser} />
   }
 
   return (
@@ -160,6 +205,22 @@ export default function TimelinedApp() {
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
+
+            {/* Account */}
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <span className="hidden sm:inline text-sm text-muted-foreground max-w-[180px] truncate">
+                {user.name ?? user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleLogout}
+                className="cursor-pointer"
+                aria-label="Log out"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>

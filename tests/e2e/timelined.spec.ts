@@ -1,37 +1,83 @@
-import { test, expect, type APIRequestContext } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
-// A period is unique per calendar month and the DB is shared, so these tests
-// run serially and cooperate on one period.
+// A period is unique per calendar month and each test gets a fresh browser
+// context, so we re-authenticate a shared account before every test, then
+// cooperate on data within the serial run.
 test.describe.configure({ mode: "serial" });
 
-const periodName = `E2E Period ${Date.now()}`;
+const email = `e2e-${Date.now()}@test.dev`;
+const password = "password123";
 
-async function clearPeriods(request: APIRequestContext) {
-  const res = await request.get("/api/periods");
-  if (!res.ok()) return;
-  for (const period of await res.json()) {
-    await request.delete(`/api/periods/${period.id}`);
+async function authenticate(page: Page) {
+  const signup = await page.request.post("/api/auth/signup", {
+    data: { email, password, name: "E2E User" },
+  });
+
+  if (signup.status() === 409) {
+    const login = await page.request.post("/api/auth/login", {
+      data: { email, password },
+    });
+    expect(login.ok()).toBeTruthy();
+  } else {
+    expect(signup.ok()).toBeTruthy();
   }
 }
 
-test("creates a period, adds a task, and it persists after reload", async ({
-  page,
-  request,
-}) => {
-  await clearPeriods(request);
+async function clearPeriods(page: Page) {
+  const res = await page.request.get("/api/periods");
+  if (!res.ok()) return;
+  for (const period of await res.json()) {
+    await page.request.delete(`/api/periods/${period.id}`);
+  }
+}
+
+test.beforeEach(async ({ page }) => {
+  await authenticate(page);
+  await clearPeriods(page);
+});
+
+test("rejects unauthenticated API requests", async ({ playwright }) => {
+  const anon = await playwright.request.newContext({
+    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
+  });
+  const res = await anon.get("/api/periods");
+  expect(res.status()).toBe(401);
+  await anon.dispose();
+});
+
+test("signs up a new user through the UI", async ({ page }) => {
+  const fresh = `ui-${Date.now()}@test.dev`;
+
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Timelined" })).toBeVisible();
 
-  // Create a period for the current month.
+  await page.getByRole("button", { name: "Log out" }).click();
+  await page.getByRole("button", { name: "Need an account? Sign up" }).click();
+
+  await page.getByLabel("Name").fill("UI User");
+  await page.getByLabel("Email").fill(fresh);
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  await expect(page.getByRole("heading", { name: "Timelined" })).toBeVisible();
+});
+
+test("creates a period, adds a task, and it persists after reload", async ({
+  page,
+}) => {
+  const periodName = `E2E Period ${Date.now()}`;
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Timelined" })).toBeVisible();
+
   await page.getByRole("button", { name: "New Period" }).click();
   await page.getByPlaceholder("Period name...").fill(periodName);
   await page.getByRole("button", { name: "Create" }).click();
 
   const bubble = page.getByText(periodName, { exact: true });
   await expect(bubble).toBeVisible();
-
-  // Open its schedule and add a task.
   await bubble.click();
+
   await expect(
     page.getByRole("heading", { name: `${periodName} Schedule` }),
   ).toBeVisible();
@@ -52,7 +98,6 @@ test("creates a period, adds a task, and it persists after reload", async ({
   await expect(page.getByText("Morning standup")).toBeVisible();
   await saved;
 
-  // Reload: data must come back from the API, not local state.
   await page.reload();
   const bubbleAfterReload = page.getByText(periodName, { exact: true });
   await expect(bubbleAfterReload).toBeVisible();
@@ -60,9 +105,8 @@ test("creates a period, adds a task, and it persists after reload", async ({
   await expect(page.getByText("Morning standup")).toBeVisible();
 });
 
-test("rejects a second period for the same month", async ({ page, request }) => {
-  // Guarantee a period exists for the current month (409 if one already does).
-  await request.post("/api/periods", {
+test("rejects a second period for the same month", async ({ page }) => {
+  await page.request.post("/api/periods", {
     data: {
       name: "Seed",
       month: new Date().getMonth(),
@@ -82,9 +126,43 @@ test("rejects a second period for the same month", async ({ page, request }) => 
   await dialog.accept();
 });
 
-test("deletes the period", async ({ page }) => {
+test("keeps data after logging out and back in", async ({ page }) => {
+  const name = `Persist ${Date.now()}`;
+  await page.request.post("/api/periods", {
+    data: {
+      name,
+      month: new Date().getMonth(),
+      year: new Date().getFullYear(),
+    },
+  });
+
   await page.goto("/");
-  await page.getByText(periodName, { exact: true }).click();
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Log out" }).click();
+  await expect(
+    page.getByRole("button", { name: "Need an account? Sign up" }),
+  ).toBeVisible();
+
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Log in" }).click();
+
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+});
+
+test("deletes the period", async ({ page }) => {
+  const name = `Delete ${Date.now()}`;
+  await page.request.post("/api/periods", {
+    data: {
+      name,
+      month: new Date().getMonth(),
+      year: new Date().getFullYear(),
+    },
+  });
+
+  await page.goto("/");
+  await page.getByText(name, { exact: true }).click();
   await page.getByRole("button", { name: "Delete Period" }).click();
 
   const deleted = page.waitForResponse(
@@ -95,5 +173,5 @@ test("deletes the period", async ({ page }) => {
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await deleted;
 
-  await expect(page.getByText(periodName, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(name, { exact: true })).toHaveCount(0);
 });

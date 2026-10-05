@@ -21,3 +21,15 @@ export const updateScheduleSchema = z.object({
 
 export type CreatePeriodInput = z.infer<typeof createPeriodSchema>;
 export type TaskInput = z.infer<typeof taskSchema>;
+
+export const credentialsSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Enter a valid email").max(200),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200),
+});
+
+export const signupSchema = credentialsSchema.extend({
+  name: z.string().trim().min(1, "Name is required").max(60).optional(),
+});
+
+export type CredentialsInput = z.infer<typeof credentialsSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;

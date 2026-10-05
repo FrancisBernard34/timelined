@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireUser } from "@/lib/api-auth";
 import { deletePeriod } from "@/lib/periods";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +9,11 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const { user, response } = await requireUser();
+  if (!user) return response;
+
   const { id } = await params;
-  const deleted = await deletePeriod(id);
+  const deleted = await deletePeriod(user.id, id);
 
   if (!deleted) {
     return NextResponse.json({ error: "Period not found" }, { status: 404 });
