@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Plus, Trash2, Clock, Pencil, Check, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { TimeInput } from "@/components/time-input";
 import type { TimelinePeriod, ScheduleTask } from "@/lib/types";
 
 interface ScheduleModalProps {
@@ -49,8 +50,6 @@ export function ScheduleModal({
   const locale = useLocale();
   const daysOfWeek = DAY_KEYS.map((day) => tDays(`long.${day}`));
   const daysShort = DAY_KEYS.map((day) => tDays(`short.${day}`));
-  // Force a 24-hour clock in the native time inputs (Chromium honors the element's lang).
-  const timeLang = locale === "en" ? "en-GB" : locale;
 
   const [tasks, setTasks] = useState<ScheduleTask[]>(period.schedule || []);
   const [currentDayTasks, setCurrentDayTasks] = useState<ScheduleTask[]>([]);
@@ -333,29 +332,25 @@ export function ScheduleModal({
                   >
                     {editingTaskId === task.id ? (
                       <>
-                        <Input
-                          type="time"
-                          lang={timeLang}
+                        <TimeInput
                           aria-label={t("startTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.startTime}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             setEditDraft((prev) => ({
                               ...prev,
-                              startTime: e.target.value,
+                              startTime: value,
                             }))
                           }
                         />
-                        <Input
-                          type="time"
-                          lang={timeLang}
+                        <TimeInput
                           aria-label={t("endTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.endTime}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             setEditDraft((prev) => ({
                               ...prev,
-                              endTime: e.target.value,
+                              endTime: value,
                             }))
                           }
                         />
@@ -455,30 +450,26 @@ export function ScheduleModal({
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-row gap-2">
-                    <Input
-                      type="time"
-                      lang={timeLang}
+                    <TimeInput
+                      aria-label={t("startTime")}
                       className=" border-orange-500 text-center"
-                      placeholder={t("startTime")}
                       value={newTask.startTime}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setNewTask((prev) => ({
                           ...prev,
-                          startTime: e.target.value,
+                          startTime: value,
                         }))
                       }
                     />
 
-                    <Input
-                      type="time"
-                      lang={timeLang}
+                    <TimeInput
+                      aria-label={t("endTime")}
                       className=" border-orange-500 text-center"
-                      placeholder={t("endTime")}
                       value={newTask.endTime}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         setNewTask((prev) => ({
                           ...prev,
-                          endTime: e.target.value,
+                          endTime: value,
                         }))
                       }
                     />

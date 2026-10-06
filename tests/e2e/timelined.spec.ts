@@ -115,9 +115,8 @@ test("creates a period, adds a task, and it persists after reload", async ({
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Add New Task" }).click();
-  const times = page.locator('input[type="time"]');
-  await times.nth(0).fill("09:00");
-  await times.nth(1).fill("09:30");
+  await page.getByLabel("Start time").fill("09:00");
+  await page.getByLabel("End time").fill("09:30");
   await page.getByPlaceholder("Task name").fill("Morning standup");
 
   // The UI saves the schedule optimistically; wait for the PUT before reloading.
