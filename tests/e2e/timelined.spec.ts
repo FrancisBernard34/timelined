@@ -223,6 +223,31 @@ test("moves a task to another day by dragging it", async ({ page }) => {
   await expect(page.getByText("Movable")).toBeVisible();
 });
 
+test("flicks the timeline and it keeps gliding after release", async ({ page }) => {
+  await page.goto("/en");
+  const scroller = page.getByTestId("timeline-scroll");
+  await scroller.waitFor();
+
+  const box = await scroller.boundingBox();
+  if (!box) throw new Error("timeline scroller is not visible");
+
+  const y = box.y + box.height / 2;
+  const startX = box.x + box.width * 0.8;
+
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.mouse.move(startX - 80, y, { steps: 2 });
+  await page.mouse.move(startX - 240, y, { steps: 2 });
+  await page.mouse.up();
+
+  const afterRelease = await scroller.evaluate((el) => el.scrollLeft);
+  await page.waitForTimeout(350);
+  const settled = await scroller.evaluate((el) => el.scrollLeft);
+
+  expect(afterRelease).toBeGreaterThan(0);
+  expect(settled).toBeGreaterThan(afterRelease);
+});
+
 test("rejects a second period for the same month", async ({ page }) => {
   await page.request.post("/api/periods", {
     data: {

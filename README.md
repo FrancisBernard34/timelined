@@ -11,11 +11,11 @@ A timeline-based planner for tracking schedules and routines across periods of t
 
 - Email/password accounts — each user only ever sees their own periods
 - Create a period (one per month) with a custom name
-- Add tasks with a day of the week, start time, and end time
-- Visual timeline of periods you can drag to navigate
+- Add tasks with a day of the week, start time, and end time (24-hour clock)
+- Visual timeline with flick-to-scroll momentum — drag it and it glides to a stop
 - Per-period schedule editor — add, remove, clone, and edit tasks between days
 - Drag-and-drop tasks between days to reschedule (desktop)
-- Internationalization — English and Portuguese, URL-based locales (`/en`, `/pt-br`) with an in-app switcher
+- Internationalization — English and Brazilian Portuguese, URL-based locales (`/en`, `/pt-br`) with an in-app switcher
 - Light/dark theme toggle (in the header and on the login screen)
 - Data persisted server-side in PostgreSQL, scoped per user
 

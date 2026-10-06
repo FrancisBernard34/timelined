@@ -49,6 +49,8 @@ export function ScheduleModal({
   const locale = useLocale();
   const daysOfWeek = DAY_KEYS.map((day) => tDays(`long.${day}`));
   const daysShort = DAY_KEYS.map((day) => tDays(`short.${day}`));
+  // Force a 24-hour clock in the native time inputs (Chromium honors the element's lang).
+  const timeLang = locale === "en" ? "en-GB" : locale;
 
   const [tasks, setTasks] = useState<ScheduleTask[]>(period.schedule || []);
   const [currentDayTasks, setCurrentDayTasks] = useState<ScheduleTask[]>([]);
@@ -167,14 +169,6 @@ export function ScheduleModal({
     setTasks(updatedTasks);
     onUpdateSchedule(period.id, updatedTasks);
     setIsCloning(false);
-  };
-
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(":");
-    const hour = Number.parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   // Group tasks by day of week
@@ -341,6 +335,7 @@ export function ScheduleModal({
                       <>
                         <Input
                           type="time"
+                          lang={timeLang}
                           aria-label={t("startTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.startTime}
@@ -353,6 +348,7 @@ export function ScheduleModal({
                         />
                         <Input
                           type="time"
+                          lang={timeLang}
                           aria-label={t("endTime")}
                           className="w-[15%] h-[2rem] border-orange-500 text-center"
                           value={editDraft.endTime}
@@ -461,6 +457,7 @@ export function ScheduleModal({
                   <div className="flex flex-row gap-2">
                     <Input
                       type="time"
+                      lang={timeLang}
                       className=" border-orange-500 text-center"
                       placeholder={t("startTime")}
                       value={newTask.startTime}
@@ -474,6 +471,7 @@ export function ScheduleModal({
 
                     <Input
                       type="time"
+                      lang={timeLang}
                       className=" border-orange-500 text-center"
                       placeholder={t("endTime")}
                       value={newTask.endTime}

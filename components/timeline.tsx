@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
+
+import { clampVelocity, decayVelocity, MIN_VELOCITY } from "@/lib/momentum"
 import type { TimelinePeriod } from "@/lib/types"
 
 interface TimelineProps {
@@ -16,7 +17,18 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
   const tMonths = useTranslations("Months")
   const timelineRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 })
+
+  const drag = useRef({
+    active: false,
+    pointerId: -1,
+    startX: 0,
+    lastX: 0,
+    lastTime: 0,
+    velocity: 0, // px per ms
+    moved: false,
+  })
+  const animationRef = useRef<number | null>(null)
+  const suppressClick = useRef(false)
 
   const currentYear = new Date().getFullYear()
   const years = [currentYear - 1, currentYear, currentYear + 1]
@@ -25,50 +37,114 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
     "jul", "aug", "sep", "oct", "nov", "dec",
   ].map((month) => tMonths(month))
 
-  // Handle mouse drag
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!timelineRef.current) return
+  const stopInertia = useCallback(() => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current)
+      animationRef.current = null
+    }
+  }, [])
+
+  // After release, keep scrolling with a decaying velocity so a hard flick
+  // glides further and eases to a stop.
+  const startInertia = useCallback(() => {
+    const element = timelineRef.current
+    if (!element) return
+
+    let velocity = clampVelocity(drag.current.velocity)
+    if (Math.abs(velocity) < MIN_VELOCITY) return
+
+    let last = performance.now()
+    const step = (now: number) => {
+      const dt = Math.min(now - last, 50)
+      last = now
+
+      if (Math.abs(velocity) < MIN_VELOCITY) {
+        animationRef.current = null
+        return
+      }
+
+      element.scrollLeft -= velocity * dt
+      velocity = decayVelocity(velocity, dt)
+      animationRef.current = requestAnimationFrame(step)
+    }
+
+    animationRef.current = requestAnimationFrame(step)
+  }, [])
+
+  const handleWindowPointerMove = useCallback((event: PointerEvent) => {
+    const state = drag.current
+    const element = timelineRef.current
+    if (!state.active || !element || event.pointerId !== state.pointerId) return
+
+    const now = performance.now()
+    const dx = event.clientX - state.lastX
+    const dt = now - state.lastTime || 16
+
+    element.scrollLeft -= dx
+
+    // Smooth the instantaneous velocity so a single jittery frame doesn't
+    // dominate the flick strength.
+    const instantaneous = dx / dt
+    state.velocity = state.velocity * 0.4 + instantaneous * 0.6
+
+    state.lastX = event.clientX
+    state.lastTime = now
+
+    if (Math.abs(event.clientX - state.startX) > 6) state.moved = true
+  }, [])
+
+  const handleWindowPointerUp = useCallback(
+    (event: PointerEvent) => {
+      const state = drag.current
+      if (!state.active || event.pointerId !== state.pointerId) return
+
+      state.active = false
+      setIsDragging(false)
+
+      window.removeEventListener("pointermove", handleWindowPointerMove)
+      window.removeEventListener("pointerup", handleWindowPointerUp)
+      window.removeEventListener("pointercancel", handleWindowPointerUp)
+
+      if (state.moved) {
+        suppressClick.current = true
+        startInertia()
+      } else {
+        state.velocity = 0
+      }
+    },
+    [handleWindowPointerMove, startInertia],
+  )
+
+  const handlePointerDown = (event: React.PointerEvent) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return
+
+    stopInertia()
+    drag.current = {
+      active: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      lastX: event.clientX,
+      lastTime: performance.now(),
+      velocity: 0,
+      moved: false,
+    }
     setIsDragging(true)
-    setDragStart({
-      x: e.pageX - timelineRef.current.offsetLeft,
-      scrollLeft: timelineRef.current.scrollLeft,
-    })
+
+    // Listen on the window so the drag keeps tracking even outside the timeline.
+    window.addEventListener("pointermove", handleWindowPointerMove)
+    window.addEventListener("pointerup", handleWindowPointerUp)
+    window.addEventListener("pointercancel", handleWindowPointerUp)
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !timelineRef.current) return
-    e.preventDefault()
-    const x = e.pageX - timelineRef.current.offsetLeft
-    const walk = (x - dragStart.x) * 2
-    timelineRef.current.scrollLeft = dragStart.scrollLeft - walk
+  // Swallow the click that follows a drag so it doesn't open a period.
+  const handleClickCapture = (event: React.MouseEvent) => {
+    if (suppressClick.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      suppressClick.current = false
+    }
   }
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  // Handle touch drag
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!timelineRef.current) return
-    setIsDragging(true)
-    setDragStart({
-      x: e.touches[0].pageX - timelineRef.current.offsetLeft,
-      scrollLeft: timelineRef.current.scrollLeft,
-    })
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !timelineRef.current) return
-    const x = e.touches[0].pageX - timelineRef.current.offsetLeft
-    const walk = (x - dragStart.x) * 2
-    timelineRef.current.scrollLeft = dragStart.scrollLeft - walk
-  }
-
-  const handleTouchEnd = () => {
-    setIsDragging(false)
-  }
-
-  // Get period position on timeline
   const getPeriodPosition = (period: TimelinePeriod) => {
     const yearIndex = years.indexOf(period.year)
     if (yearIndex === -1) return null
@@ -81,15 +157,15 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
     <div className="w-full">
       <div
         ref={timelineRef}
-        className={`relative overflow-x-auto scrollbar-hide ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        data-testid="timeline-scroll"
+        className={`relative overflow-x-auto scrollbar-hide select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          touchAction: "pan-y",
+        }}
+        onPointerDown={handlePointerDown}
+        onClickCapture={handleClickCapture}
       >
         <div className="relative h-56 min-w-max pt-8">
           {/* Timeline line */}
@@ -97,7 +173,7 @@ export function Timeline({ periods, onPeriodClick }: TimelineProps) {
 
           {/* Years and months */}
           <div className="flex">
-            {years.map((year, yearIndex) => (
+            {years.map((year) => (
               <div key={year} className="flex">
                 {months.map((month, monthIndex) => (
                   <div key={`${year}-${month}`} className="relative w-32 flex flex-col items-center">

@@ -5,6 +5,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { routing, type Locale } from "@/i18n/routing";
 
+const LOCALE_LABELS: Record<string, string> = {
+  en: "English",
+  "pt-br": "Português (BR)",
+};
+
 export function LocaleSwitcher() {
   const t = useTranslations("LocaleSwitcher");
   const locale = useLocale();
@@ -24,7 +29,7 @@ export function LocaleSwitcher() {
       >
         {routing.locales.map((option) => (
           <option key={option} value={option}>
-            {option === "pt-br" ? "PT" : option.toUpperCase()}
+            {LOCALE_LABELS[option] ?? option}
           </option>
         ))}
       </select>
